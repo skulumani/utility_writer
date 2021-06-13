@@ -8,5 +8,5 @@ dependencies:
   - pip:
     - pydotenv
     - influxdb_client
-    - requests==2.0
+    - requests
 
