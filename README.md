@@ -8,6 +8,12 @@ Write utility data from
 
 to the influxdb 
 
+# Installation
+
+~~~
+conda env create -f environment.yml
+~~~
+
 # TODO
 
 * Add [enphase API](https://github.com/chrisroedig/py-enphase-enlighten) library

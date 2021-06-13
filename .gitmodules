@@ -1,0 +1,6 @@
+[submodule "external/py-enphase-enlighten"]
+	path = external/py-enphase-enlighten
+	url = git@github.com:chrisroedig/py-enphase-enlighten.git
+[submodule "external/python_enlighten_api"]
+	path = external/python_enlighten_api
+	url = https://github.com/danielpatenaude/python_enlighten_api
