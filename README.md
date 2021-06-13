@@ -12,3 +12,4 @@ to the influxdb
 
 * Add enphase API library
 * Add pvoutput API library
+* Add conda enviornment file
