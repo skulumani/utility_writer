@@ -4,9 +4,11 @@ dependencies:
   - pandas
   - numpy
   - ipython
+  - matplotlib
   - pip
   - pip:
     - pydotenv
     - influxdb_client
     - requests
+    - pytz
 

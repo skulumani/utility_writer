@@ -1,16 +1,15 @@
 from enphase import enlighten
 from datetime import datetime
 
+import config
+
 # inverter level data
 eclient = enlighten.Client()
 
-username = "username"
-password = "password"
-
-eclient.login(username, password)
+eclient.login(config.username, config.password)
 
 # check on timezone
-date = datetime(2021, 01, 01, 0, 0, 0)
+date = datetime(2021, 1, 1, 0, 0, 0)
 times, powers = eclient.system_data(date)
 
 
