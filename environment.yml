@@ -6,6 +6,7 @@ dependencies:
   - ipython
   - matplotlib
   - pip
+  - scipy
   - pip:
     - pydotenv
     - influxdb_client
