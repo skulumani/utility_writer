@@ -188,7 +188,9 @@ class Client():
         time_id = self.time_index(time)
         return times[time_id], powers[time_id]
 
+    
     def system_totals_data(self, date):
+        '''This function is useless and doesn't work'''
         date_key = date.strftime('%Y-%m-%d')
         if self.power_data.get(date_key, None) is None:
             self.fetch_day(date)
