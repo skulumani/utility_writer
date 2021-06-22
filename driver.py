@@ -10,50 +10,74 @@ import pandas
 import config
 import influxdb_util
 
-# check if session/config file exists
-eclient = enlighten.Client(time_step=15)
-eclient.login(config.username, config.password)
 
-date = datetime(2021, 5, 30)
+def get_daily_solar_data(eclient, date):
+    print("Starting {}".format(date.strftime("%Y-%m-%d")),end=' ')
+    # power levels for entire day
+    times, powers = eclient.system_data(date)
+    times = np.array(times) # UTC time
+    powers = np.array(powers) # panel level power for the day
 
-# power levels for entire day
-times, powers = eclient.system_data(date)
-times = np.array(times) # UTC time
-powers = np.array(powers) # panel level power for the day
+    # get list of panel serial numbers
+    system_id = eclient.system_id
+    modules = sorted(eclient.modules, key=lambda x: x['inverter']['inverter_id'])
+    id_index = eclient.device_index # same order as powers
+    serial_num = np.array([int(m['inverter']['serial_num']) for m in modules])
 
-# get list of panel serial numbers
-system_id = eclient.system_id
-modules = sorted(eclient.modules, key=lambda x: x['inverter']['inverter_id'])
-id_index = eclient.device_index # same order as powers
-serial_num = np.array([int(m['inverter']['serial_num']) for m in modules])
+    # convert times to hours of the day
+    epoch = times[0].timestamp()
+    hours_of_day = [(t.timestamp() - epoch)/3600 for t in times]
 
-# convert times to hours of the day
-epoch = times[0].timestamp()
-hours_of_day = [(t.timestamp() - epoch)/3600 for t in times]
+    # panel energy over the day
+    daily_panel_energy = np.trapz(powers, hours_of_day) # Watt Hours for entire day for each panel
+    cum_panel_energy = integrate.cumtrapz(powers, hours_of_day, initial=0) # Watt Hour cumulative over the day
 
-# panel energy over the day
-daily_energy = np.trapz(powers, hours_of_day) # Watt Hours for entire day for each panel
-cum_energy = integrate.cumtrapz(powers, hours_of_day, initial=0) # Watt Hour cumulative over the day
+    # get total system energy for a day by summing up panel
+    sys_power = np.sum(powers, axis=0)
+    sys_daily_energy = np.sum(daily_panel_energy) # Watt  Hours
+    sys_cum_energy = np.sum(cum_panel_energy, axis=0) 
 
-# get total system energy for a day by summing up panel
-sys_power = np.sum(powers, axis=0)
-sys_daily_energy = np.sum(daily_energy) # Watt  Hours
-sys_cum_energy = np.sum(cum_energy, axis=0) 
+    eastern = pytz.timezone("America/New_York")
+    utc = pytz.utc
+    # dt = np.arange(date, date+timedelta(days=1), timedelta(hours=0.25)).astype(datetime)
+    dt = [eastern.localize(d).astimezone(utc) for d in times]
 
-# time array
-eastern = pytz.timezone("America/New_York")
-utc = pytz.utc
-dt = np.arange(date, date+timedelta(days=1), timedelta(hours=0.25)).astype(datetime)
-dt = [eastern.localize(d).astimezone(utc) for d in dt]
+    # write panel data (15 min interval)
+    for p, cpe, sn in zip(powers, cum_panel_energy, serial_num):
+        influxdb_util.ingest_panel_data(dt, panel_list=p,
+                                        serial_num=sn,
+                                        measurement_name="panel_power",
+                                        source="enphase",
+                                        units="W")
 
-# form pandas df - panel_power for each inverter
-data = {'time': dt, 'panel_power': powers[0, :]}
-df = pandas.DataFrame(data)
-df = df.assign(serial_num=serial_num[0])
-df = df.set_index("time")
+        influxdb_util.ingest_panel_data(dt, panel_list=cpe,
+                                        serial_num=sn,
+                                        measurement_name="panel_energy",
+                                        source="enphase",
+                                        units="Wh")
 
-# write to influxdb
-influxdb_util.ingest_dataframe(df, measurement_name="panel_power", tag_columns=["serial_num"])
+
+    # write system data (1 per day interval)
+    for p, sn in zip(daily_panel_energy, serial_num):
+
+        influxdb_util.write_point(dt[0], measurement=p, measurement_name="daily_panel_energy",
+                                tag_dict={"source": "enphase", "units": "Wh", "serial_num": sn})
+
+
+    # write total system power 
+    influxdb_util.ingest_system_data(dt, system_list=sys_power,
+                                    measurement_name="system_power",
+                                    source="enphase",
+                                    units="W")
+    influxdb_util.ingest_system_data(dt, system_list=sys_cum_energy,
+                                    measurement_name="system_energy",
+                                    source="enphase",
+                                    units="Wh")
+    influxdb_util.write_point(dt[0], measurement=sys_daily_energy, 
+                            measurement_name="total_system_energy", 
+                            tag_dict={"source": "enphase", "units": "Wh"})
+
+    print("Total Energy: {:9.3f} Wh".format(sys_daily_energy))
 
 # Things to write to influx
 # 1. Total system energy at 15 min intervals over the day (system_energy)
@@ -71,3 +95,14 @@ influxdb_util.ingest_dataframe(df, measurement_name="panel_power", tag_columns=[
 # 7. Metric for weather (cloudy, sunny, etc)
 
 # loop to next day - random backoff for client calls to website
+
+if __name__=="__main__":
+    # check if session/config file exists
+    eclient = enlighten.Client(time_step=15)
+    eclient.login(config.username, config.password)
+
+    # parse start, stop dates arguments - date from string
+    # call daily energy download function in a loop
+    get_daily_solar_data(eclient, datetime(2021,6,17))
+    get_daily_solar_data(eclient, datetime(2021,6,18))
+    get_daily_solar_data(eclient, datetime(2021,6,19))
