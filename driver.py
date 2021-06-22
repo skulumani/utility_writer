@@ -8,6 +8,7 @@ from scipy import integrate
 import pandas
 
 import config
+import influxdb_util
 
 # check if session/config file exists
 eclient = enlighten.Client(time_step=15)
@@ -45,9 +46,14 @@ utc = pytz.utc
 dt = np.arange(date, date+timedelta(days=1), timedelta(hours=0.25)).astype(datetime)
 dt = [eastern.localize(d).astimezone(utc) for d in dt]
 
-# form pandas df 
+# form pandas df - panel_power for each inverter
+data = {'time': dt, 'panel_power': powers[0, :]}
+df = pandas.DataFrame(data)
+df = df.assign(serial_num=serial_num[0])
+df = df.set_index("time")
 
 # write to influxdb
+influxdb_util.ingest_dataframe(df, measurement_name="panel_power", tag_columns=["serial_num"])
 
 # Things to write to influx
 # 1. Total system energy at 15 min intervals over the day (system_energy)
