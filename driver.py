@@ -42,7 +42,7 @@ def get_daily_solar_data(eclient, date):
     utc = pytz.utc
     # dt = np.arange(date, date+timedelta(days=1), timedelta(hours=0.25)).astype(datetime)
     dt = [eastern.localize(d).astimezone(utc) for d in times]
-    import pdb;pdb.set_trace()
+
     # write panel data (15 min interval)
     for p, cpe, sn in zip(powers, cum_panel_energy, serial_num):
         influxdb_util.ingest_panel_data(dt, panel_list=p,
