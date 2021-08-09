@@ -122,14 +122,14 @@ if __name__ == "__main__":
     # setup argparse
     parser = argparse.ArgumentParser(description="Write utility data to influxdb")
 
-    parser.add_argument("solar", metavar="S", type=str, help="Solar production CSV file")
+    # parser.add_argument("solar", metavar="S", type=str, help="Solar production CSV file")
     parser.add_argument("power", metavar="P", type=str, help="Power production CSV file")
     parser.add_argument("water", metavar="W", type=str, help="Water production CSV file")
 
     args = parser.parse_args()
 
-    df = read_enphase_daily_report(args.solar)
-    ingest_dataframe(df, measurement_name="solar_daily_production", tag_columns=["units", "source"])
+    # df = read_enphase_daily_report(args.solar)
+    # ingest_dataframe(df, measurement_name="solar_daily_production", tag_columns=["units", "source"])
 
     df = read_pepco(args.power)
     ingest_dataframe(df, measurement_name="energy_consumption", tag_columns=["units", "source"])

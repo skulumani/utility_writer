@@ -18,6 +18,23 @@ Rename `config_example.py` to `config.py`
 
 Fill in config information with enphase contractor account and influxdb credentials
 
+# Instructions
+
+1. Download power usage and water usage
+2. Get solar production data
+
+~~~
+conda activate utilities
+python driver.py <start YYYYMMDD> <end YYYYMMDD>
+~~~
+
+3. Get power and water usage
+
+~~~
+conda activate utilities
+python write_influxdb.py <path to power.csv> <path to water.csv>
+~~~
+
 # TODO
 
 * [ ] Add [enphase API](https://github.com/chrisroedig/py-enphase-enlighten) library
