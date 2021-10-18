@@ -8,17 +8,7 @@ Write utility data from
 
 to the influxdb 
 
-# Installation
-
-~~~
-conda env create -f environment.yml
-~~~
-
-Rename `config_example.py` to `config.py`
-
-Fill in config information with enphase contractor account and influxdb credentials
-
-# Instructions
+# Usage
 
 1. Download power usage and water usage
 2. Get solar production data
@@ -35,11 +25,21 @@ conda activate utilities
 python write_influxdb.py <path to power.csv> <path to water.csv>
 ~~~
 
+# Installation
+
+~~~
+conda env create -f environment.yml
+~~~
+
+Rename `config_example.py` to `config.py`
+
+Fill in config information with enphase contractor account and influxdb credentials
+
 # TODO
 
 * [ ] Add [enphase API](https://github.com/chrisroedig/py-enphase-enlighten) library
 * [ ] Add pvoutput API library - write Pepco data to pvoutput
-* [ ] Add conda enviornment file
+* [x] Add conda enviornment file
 * [x] Move secrets to a seperate file
 
 # Libraries
