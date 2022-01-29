@@ -16,10 +16,10 @@ org = "wolverines"
 bucket = "utilities" # "investments"
 
 
-def daily_power_usage(year=2021):
-    """Read power usage
+def daily_energy_usage(year=2021):
+    """Daily energy usage
     
-    Get power usage for each day of the year
+    Get energy usage for each day of the year
     """
 
     # read from influx db
@@ -56,19 +56,22 @@ def daily_power_usage(year=2021):
     # legend
     # legend = ax.legend(*scatter.legend_elements(), title="Month", loc="upper right",
     #                 mode="expand", ncol=12)
-    print("Sum: {}".format(sum(energy)))
+    print("{} Total Energy used: {}".format(year, sum(energy)))
+
     plt.xlabel("Day of Year")
     plt.ylabel("Energy (kWh)")
-    plt.title("{:g} Energy Usage".format(year))
+    plt.title("{:g} Energy Usage - Total {:.3} kWh".format(year, sum(energy)))
     plt.grid(axis='both', alpha=0.5)
     plt.show()
 
     client.close()
-def hourly_power_usage(year=2021):
-    """Read power usage
+
+def hourly_energy_usage(year=2021):
+    """Hourly energy usage
     
-    Get power usage for each hour of each day
-    Plot as point for entire year
+    Get energy usage for each hour of the year and plot as a point
+
+    Shows energy usage for each hour of the day over entire year
     """
 
     # read from influx db
@@ -93,11 +96,22 @@ def hourly_power_usage(year=2021):
     hour = [t.hour for t in time]
     month = [t.month for t in time]
     energy = data_frame["_value"]/1000
-    
+   
+    # find average energy used for each hour
+    energy_mean = np.zeros(24)
+    for (e, h) in zip(energy, hour):
+        energy_mean[h] += e
+
+    energy_mean = energy_mean / 365
+
+    # import pdb; pdb.set_trace()
+
     fig, ax = plt.subplots()
     cmap = plt.get_cmap('hsv')
 
     scatter = ax.scatter(hour, energy, c=month, cmap=cmap, s=5)
+    ax.plot(np.arange(0, 24), energy_mean, "k-x")
+
     ax.set_xlim([0, 23])
     
     # legend
@@ -106,14 +120,16 @@ def hourly_power_usage(year=2021):
 
     plt.xlabel("Hour")
     plt.ylabel("Energy (kWh)")
-    plt.title("{:g} Energy Usage".format(year))
+    plt.title("{:g} Hourly Energy Usage".format(year))
     plt.grid(axis='both', alpha=0.5)
     plt.show()
 
     client.close()
 
-def hourly_solar_power(year=2021):
-    """Read and plot solar power from influxdb
+def annual_solar_power(year=2021):
+    """Solar power for entire year
+
+    Get power for each hour over the entire year
 
     """
     # read from influx db
@@ -137,15 +153,16 @@ def hourly_solar_power(year=2021):
     time = data_frame["_time"]
     hour = [t.hour for t in time]
     month = [t.month for t in time]
+    tod = [t.time() for t in time]
     power = data_frame["_value"]/1000
-
+    
     fig, ax = plt.subplots()
     cmap = plt.get_cmap('hsv')
 
-    scatter = ax.scatter(hour, power, c=month, cmap=cmap, s=5)
-    ax.set_xlim([0, 23])
+    scatter = ax.scatter(time, power, c=month, cmap=cmap, s=5)
+    # ax.set_xlim([0, 23])
 
-    plt.xlabel("Hour")
+    plt.xlabel("Time of Day")
     plt.ylabel("Power (kW)")
     plt.title("{:g} Solar Power".format(year))
     plt.grid(axis='both', alpha=0.5)
@@ -154,7 +171,10 @@ def hourly_solar_power(year=2021):
     client.close()
 
 def daily_solar_energy(year=2021):
-    """Energy from each day of the year"""
+    """Daily solar energy
+
+    Energy generated each day over the entire year
+    """
 
     # read from influx db
     client = InfluxDBClient(url=url, token=token, org=org)
